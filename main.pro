@@ -27,6 +27,22 @@ number_of_agents(State, NumberOfAgents) :-
 
 
 % 3- value_of_farm(+State, -Value)
+% Calculates the total value of all products on the farm
+value_of_farm(State, Value) :-
+    State = [Agents, Objects, _, _], % Extracting Agents and Objects from the State
+    dict_pairs(Agents, _, Animals), % Extracting the Animals from the Agents
+    dict_pairs(Objects, _, Foods), % Extracting the Foods from the Objects
+    values_sum(Animals, AnimalValue), % Calculating the total value of the Animals
+    values_sum(Foods, FoodValue), % Calculating the total value of the Foods
+    Value is AnimalValue + FoodValue. % Summing the total value of Animals and Foods
+
+
+% Helper function to calculate the total value of a list of objects
+values_sum([], 0).
+values_sum([_Type-Value|T], Total) :-
+    values_sum(T, Rest),
+    Total is Value + Rest.
+
 
 % 4- find_food_coordinates(+State, +AgentId, -Coordinates)
 
