@@ -45,6 +45,22 @@ values_sum([_Type-Value|T], Total) :-
 
 
 % 4- find_food_coordinates(+State, +AgentId, -Coordinates)
+% Finds the coordinates of all food objects that an agent can eat and are within its reach
+find_food_coordinates(State, AgentId, Coordinates) :-
+    State = [Agents, Objects, _, _], % Unpack the State into its components
+    get_dict(AgentId, Agents, Agent), % Retrieve information about the agent with the given AgentId
+    % Find all reachable food coordinates using findall
+    findall([X,Y], (
+        dict_pairs(Objects, _, ObjectList), % Iterate over all objects in the State
+        member(_-Object, ObjectList),
+        get_dict(subtype, Object, FoodType), % Extract the subtype of the object, representing its type
+        can_eat(Agent.subtype, FoodType),
+        agents_distance(Agent, Object, Distance),
+        Distance =< Agent.subtype * 2, % Check if the food is within reach of the agent
+        get_dict(x, Object, X),
+        get_dict(y, Object, Y)
+    ), Coordinates).
+
 
 % 5- find_nearest_agent(+State, +AgentId, -Coordinates, -NearestAgent)
 
