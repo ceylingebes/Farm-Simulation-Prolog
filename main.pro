@@ -19,6 +19,12 @@ agents_distance(Agent1, Agent2, Distance):-
 
 
 % 2- number_of_agents(+State, -NumberOfAgents)
+% Finds the total number of agents in a State and unifies it with NumberOfAgents
+number_of_agents(State, NumberOfAgents) :-
+    State = [Agents, _, _, _], % Extracting the Agents from the State
+    dict_pairs(Agents, _, Pairs), % Converting the Agents dictionary into pairs
+    length(Pairs, NumberOfAgents). % Finding the length of the pairs, which represents the number of agents
+
 
 % 3- value_of_farm(+State, -Value)
 
