@@ -18,12 +18,14 @@ agents_distance(Agent1, Agent2, Distance):-
     Distance is abs(X1 - X2) + abs(Y1 - Y2).
 
 
+
 % 2- number_of_agents(+State, -NumberOfAgents)
 % Finds the total number of agents in a State and unifies it with NumberOfAgents
 number_of_agents(State, NumberOfAgents) :-
     State = [Agents, _, _, _], % Extracting the Agents from the State
     dict_pairs(Agents, _, Pairs), % Converting the Agents dictionary into pairs
     length(Pairs, NumberOfAgents). % Finding the length of the pairs, which represents the number of agents
+
 
 
 % 3- value_of_farm(+State, -Value)
@@ -44,6 +46,7 @@ values_sum([_Type-Value|T], Total) :-
     Total is Value + Rest.
 
 
+
 % 4- find_food_coordinates(+State, +AgentId, -Coordinates)
 % Finds the coordinates of all food objects that an agent can eat and are within its reach
 find_food_coordinates(State, AgentId, Coordinates) :-
@@ -62,7 +65,55 @@ find_food_coordinates(State, AgentId, Coordinates) :-
     ), Coordinates).
 
 
+
 % 5- find_nearest_agent(+State, +AgentId, -Coordinates, -NearestAgent)
+% Finds the coordinates and the identity of the nearest agent to the agent with the given AgentId in the State
+find_nearest_agent(State, AgentId, Coordinates, NearestAgent) :-
+    % Unpack the State into its components
+    State = [Agents, _, _, _],
+    % Ensure that Agents dictionary is non-empty
+    dict_pairs(Agents, _, AgentList),
+    AgentList \= [], % Add this check to handle empty agent list
+    get_dict(AgentId, Agents, Agent),
+    % Extract the current position of the agent
+    get_dict(x, Agent, X),
+    get_dict(y, Agent, Y),
+    % Find all other agents in the State
+    dict_pairs(Agents, _, AgentList),
+    % Initialize variables for tracking the nearest agent and its distance
+    MinDistance = infinity,
+    NearestAgentId = null,
+    % Iterate over all agents in the State
+    find_nearest_helper(AgentId, AgentList, X, Y, MinDistance, NearestAgentId),
+    % If a nearest agent is found, unify the Coordinates and NearestAgent variables
+    (NearestAgentId \= null ->
+        (get_dict(NearestAgentId, Agents, NearestAgent),
+        Coordinates = [X_, Y_])
+        ;
+        (Coordinates = [], NearestAgent = null)
+    ).
+
+
+% Helper function to find the nearest agent to the agent with the given AgentId
+find_nearest_helper(_, [], _, _, _, _).
+find_nearest_helper(AgentId, [Id-Agent_|T], X, Y, MinDistance, NearestAgentId) :-
+    % Skip the agent with the given AgentId
+    AgentId \= Id,
+    % Extract the position of the current agent
+    get_dict(x, Agent_, X_),
+    get_dict(y, Agent_, Y_),
+    % Calculate the Manhattan distance between the current agent and the given agent
+    agents_distance(Agent, Agent_, Distance),
+    % If the distance is smaller than the current minimum distance, update the nearest agent information
+    (Distance < MinDistance ->
+        (MinDistance = Distance, NearestAgentId = Id)
+        ;
+        true
+    ),
+    % Recursively call the helper function with the remaining agents
+    find_nearest_helper(AgentId, T, X, Y, MinDistance, NearestAgentId).
+
+
 
 % 6- find_nearest_food(+State, +AgentId, -Coordinates, -FoodType, -Distance)
 
