@@ -95,8 +95,8 @@ find_nearest_agent(State, AgentId, Coordinates, NearestAgent) :-
 
 
 % Helper function to find the nearest agent to the agent with the given AgentId
-find_nearest_helper(_, [], _, _, _, _).
-find_nearest_helper(AgentId, [Id-Agent_|T], X, Y, MinDistance, NearestAgentId) :-
+find_nearest_agent_helper(_, [], _, _, _, _).
+find_nearest_agent_helper(AgentId, [Id-Agent_|T], X, Y, MinDistance, NearestAgentId) :-
     % Skip the agent with the given AgentId
     AgentId \= Id,
     % Extract the position of the current agent
@@ -111,7 +111,7 @@ find_nearest_helper(AgentId, [Id-Agent_|T], X, Y, MinDistance, NearestAgentId) :
         true
     ),
     % Recursively call the helper function with the remaining agents
-    find_nearest_helper(AgentId, T, X, Y, MinDistance, NearestAgentId).
+    find_nearest_agent_helper(AgentId, T, X, Y, MinDistance, NearestAgentId).
 
 
 
