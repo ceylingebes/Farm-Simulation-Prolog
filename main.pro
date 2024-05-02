@@ -40,7 +40,7 @@ value_of_farm(State, Value) :-
 
 
 % Helper function to calculate the total value of a list of objects
-values_sum([], 0).
+values_sum([], 0). % Base case: empty list
 values_sum([_Type-Value|T], Total) :-
     values_sum(T, Rest),
     Total is Value + Rest.
@@ -95,7 +95,7 @@ find_nearest_agent(State, AgentId, Coordinates, NearestAgent) :-
 
 
 % Helper function to find the nearest agent to the agent with the given AgentId
-find_nearest_agent_helper(_, [], _, _, _, _).
+find_nearest_agent_helper(_, [], _, _, _, _). % Base case: no agents left
 find_nearest_agent_helper(AgentId, [Id-Agent_|T], X, Y, MinDistance, NearestAgentId) :-
     % Skip the agent with the given AgentId
     AgentId \= Id,
@@ -116,6 +116,49 @@ find_nearest_agent_helper(AgentId, [Id-Agent_|T], X, Y, MinDistance, NearestAgen
 
 
 % 6- find_nearest_food(+State, +AgentId, -Coordinates, -FoodType, -Distance)
+% Finds the coordinates, type, and distance of the nearest food object to the agent with the given AgentId in the State
+find_nearest_food(State, AgentId, Coordinates, FoodType, Distance) :-
+    State = [Agents, Objects, _, _],
+    % Retrieve information about the agent with the given AgentId
+    get_dict(AgentId, Agents, Agent),
+    % Extract the current position of the agent
+    get_dict(x, Agent, X),
+    get_dict(y, Agent, Y),
+    % Find all reachable food objects and their coordinates
+    find_food_coordinates(State, AgentId, FoodCoordinates),
+    % Initialize variables for tracking the nearest food object and its distance
+    MinDistance = infinity,
+    NearestFood = [],
+    % Iterate over all food coordinates to find the nearest one
+    find_nearest_food_helper(FoodCoordinates, X, Y, MinDistance, NearestFood),
+    % Unify the result with the output variables
+    (NearestFood = [X_, Y_] ->
+        (Coordinates = [X_, Y_],
+        % Find the type of the nearest food object
+        get_dict([X_, Y_], Objects, Food),
+        get_dict(subtype, Food, FoodType),
+        % Calculate the distance to the nearest food object
+        Distance is abs(X - X_) + abs(Y - Y_))
+        ;
+        (Coordinates = [], FoodType = null, Distance = infinity)
+    ).
+
+
+% Helper function to find the nearest food object
+find_nearest_food_helper([], _, _, _, _). % Base case: no food objects left
+find_nearest_food_helper([[X,Y]|T], XAgent, YAgent, MinDistance, NearestFood) :-
+    % Calculate the Manhattan distance between the agent and the food object
+    Distance is abs(XAgent - X) + abs(YAgent - Y),
+    % If the distance is smaller than the current minimum distance, update the nearest food object information
+    (Distance < MinDistance ->
+        (MinDistance = Distance, NearestFood = [X, Y])
+        ;
+        true
+    ),
+    % Recursively call the helper function with the remaining food coordinates
+    find_nearest_food_helper(T, XAgent, YAgent, MinDistance, NearestFood).
+
+
 
 % 7- move_to_coordinate(+State, +AgentId, +X, +Y, -ActionList, +DepthLimit)
 
