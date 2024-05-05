@@ -135,34 +135,47 @@ find_nearest_agent_helper([[[X, Y], Agent]|Rest], AgentX, AgentY, Coordinates, N
 
 
 
-% 6- find_nearest_food(+State, +AgentId, -Coordinates, -FoodType, -Distance)
+% 6- find_nearest_food(+State, +AgentId, -Coordinates, -FoodType, -Distance) DONE
 % query: state(Agents, Objects, Time, TurnOrder), State=[Agents, Objects, Time, TurnOrder], find_nearest_food(State, AgentId, Coordinates, FoodType, Distance).
-% Finds the coordinates, type, and distance of the nearest food object to the agent with the given AgentId in the State
 find_nearest_food(State, AgentId, Coordinates, FoodType, Distance) :-
-    find_food_coordinates(State, AgentId, FoodCoordinates), % Find coordinates of all food objects that the agent can eat
-    State = [Agents, _, _, _], % Extracting Agents from the State
-    get_dict(AgentId, Agents, Agent), % Getting the agent with the specified AgentId
-    get_dict(x, Agent, AgentX), % Getting the X coordinate of the agent
-    get_dict(y, Agent, AgentY), % Getting the Y coordinate of the agent
-    find_nearest_food_helper(FoodCoordinates, AgentX, AgentY, null, 999999, null, null, null, NearestDistance), % Find the nearest food
-    Distance = NearestDistance, % Unify Distance with the nearest food's distance
-    manhattan_distance([x:AgentX, y:AgentY], [x:Coordinates, y:_], Distance), % Calculate distance between agent and food
-    get_dict(subtype, Food, FoodType), % Get the type of the nearest food
-    get_dict(x, Food, Coordinates). % Unify Coordinates with the nearest food's coordinates
+    % Extract agents and objects from the state
+    state(Agents, Objects, _, _),
+    % Get the agent's position
+    get_dict(AgentId, Agents, Agent),
+    get_dict(x, Agent, AgentX),
+    get_dict(y, Agent, AgentY),
+    % Find coordinates of all consumable food objects for this agent
+    find_food_coordinates(State, AgentId, ConsumableFoodCoordinates),
+    find_nearest_food_helper(ConsumableFoodCoordinates, AgentX, AgentY, Coordinates, FoodType, Distance),
+    !. % Cut to prevent backtracking
+
+% Helper predicate to find the nearest food object
+find_nearest_food_helper([], _, _, null, null, null). % Base case: no consumable food objects found
+find_nearest_food_helper([Coordinates|Rest], AgentX, AgentY, NearestCoordinates, NearestFoodType, NearestDistance) :-
+    Coordinates = [X, Y],
+    get_food_type([X, Y], FoodType),
+    manhattan_distance([X, Y], [AgentX, AgentY], Dist),
+    find_nearest_food_helper(Rest, AgentX, AgentY, RestCoordinates, RestFoodType, RestDistance),
+    (
+        (RestCoordinates = null ; Dist < RestDistance),
+        NearestCoordinates = [X, Y],
+        NearestFoodType = FoodType,
+        NearestDistance = Dist
+    ;
+        NearestCoordinates = RestCoordinates,
+        NearestFoodType = RestFoodType,
+        NearestDistance = RestDistance
+    ).  
 
 
-% Helper predicate to find the nearest food
-find_nearest_food_helper([], _, _, FoodType, NearestDistance, NearestX, NearestY, NearestFoodType, NearestDistance) :-
-    FoodType \= null.
-find_nearest_food_helper([], _, _, _, _, _, _, _, _).
-find_nearest_food_helper([[X, Y]|Rest], AgentX, AgentY, FoodType, NearestDistance, NearestX, NearestY, NearestFoodType, NearestDistance) :-
-    manhattan_distance([x:AgentX, y:AgentY], [x:X, y:Y], Distance), % Calculate distance between agent and food
-    Distance < NearestDistance, % Check if this food is closer than the previous nearest one
-    find_nearest_food_helper(Rest, AgentX, AgentY, FoodType, Distance, X, Y, FoodType, Distance). % Continue searching for nearest food
-find_nearest_food_helper([[X, Y]|Rest], AgentX, AgentY, FoodType, NearestDistance, NearestX, NearestY, NearestFoodType, NearestDistance) :-
-    manhattan_distance([x:AgentX, y:AgentY], [x:X, y:Y], Distance), % Calculate distance between agent and food
-    Distance >= NearestDistance, % Check if this food is not closer than the previous nearest one
-    find_nearest_food_helper(Rest, AgentX, AgentY, FoodType, NearestDistance, NearestX, NearestY, NearestFoodType, NearestDistance). % Continue searching for nearest food
+% Helper predicate to get the type of food at a given coordinate
+get_food_type([X, Y], FoodType) :-
+    state(_, Objects, _, _),
+    get_dict(_, Objects, Object),
+    get_dict(x, Object, X),
+    get_dict(y, Object, Y),
+    get_dict(subtype, Object, FoodType).
+
 
 % 7- move_to_coordinate(+State, +AgentId, +X, +Y, -ActionList, +DepthLimit)
 
