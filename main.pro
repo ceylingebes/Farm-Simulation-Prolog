@@ -115,14 +115,14 @@ find_nearest_agent(State, AgentId, Coordinates, NearestAgent) :-
         get_dict(x, OtherAgent, OtherX), % Get the X coordinate of the other agent
         get_dict(y, OtherAgent, OtherY) % Get the Y coordinate of the other agent
     ), OtherAgentCoordinates), % List of all agent coordinates
-    find_min_distance(OtherAgentCoordinates, AgentX, AgentY, Coordinates, NearestAgent),
+    find_nearest_agent_helper(OtherAgentCoordinates, AgentX, AgentY, Coordinates, NearestAgent),
     !. % Find the nearest agent
 
 % Helper predicate to find the nearest agent
-find_min_distance([], _, _, null, _). % Base case: no other agents found
-find_min_distance([[[X, Y], Agent]|Rest], AgentX, AgentY, Coordinates, NearestAgent) :-
+find_nearest_agent_helper([], _, _, null, _). % Base case: no other agents found
+find_nearest_agent_helper([[[X, Y], Agent]|Rest], AgentX, AgentY, Coordinates, NearestAgent) :-
     manhattan_distance([X, Y], [AgentX, AgentY], Dist),
-    find_min_distance(Rest, AgentX, AgentY, RestCoordinates, RestNearestAgent),
+    find_nearest_agent_helper(Rest, AgentX, AgentY, RestCoordinates, RestNearestAgent),
     (
         (RestCoordinates = null ; Dist < RestNearestAgentDistance),
         Coordinates = [X, Y],
