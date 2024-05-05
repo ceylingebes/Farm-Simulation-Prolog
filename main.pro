@@ -7,9 +7,17 @@
 :- ['cmpefarm.pro'].
 :- init_from_map.
 
+% consult("main.pro").
+% query: state(Agents, Objects, Time, TurnOrder).
+% Agents = agent_dict{0:agents{children:0, energy_point:0, subtype:cow, type:herbivore, x:1, y:1}},
+% Objects = object_dict{0:object{subtype:grass, type:food, x:1, y:2}, 1:object{subtype:grass, type:food, x:4, y:2}, 2:object{subtype:grass, type:food, x:2, y:3}},
+% Time = 0,
+% TurnOrder = [0].
 
-% 1- agents_distance(+Agent1, +Agent2, -Distance)
-% Computes the Manhattan distance between two agents DONE
+
+% 1- agents_distance(+Agent1, +Agent2, -Distance) DONE
+% query: state(Agents, _, _, _), agents_distance(Agents.0, Agents.1, Distance).
+% Computes the Manhattan distance between two agents
 agents_distance(Agent1, Agent2, Distance):-
     get_dict(x, Agent1, X1),
     get_dict(x, Agent2, X2),
@@ -19,7 +27,8 @@ agents_distance(Agent1, Agent2, Distance):-
 
 
 
-% 2- number_of_agents(+State, -NumberOfAgents)
+% 2- number_of_agents(+State, -NumberOfAgents) DONE
+% query: state(Agents, Objects, Time, TurnOrder), State=[Agents, Objects, Time, TurnOrder], number_of_agents(State, NumberOfAgents).
 % Finds the total number of agents in a State and unifies it with NumberOfAgents
 number_of_agents(State, NumberOfAgents) :-
     State = [Agents, _, _, _], % Extracting the Agents from the State
@@ -28,21 +37,24 @@ number_of_agents(State, NumberOfAgents) :-
 
 
 
-% 3- value_of_farm(+State, -Value)
+% 3- value_of_farm(+State, -Value)  DONE
+% query: state(Agents, Objects, Time, TurnOrder), State=[Agents, Objects, Time, TurnOrder], value_of_farm(State, Value).
 % Calculates the total value of all products on the farm
 value_of_farm(State, Value) :-
     State = [Agents, Objects, _, _], % Extracting Agents and Objects from the State
-    dict_pairs(Agents, _, Animals), % Extracting the Animals from the Agents
-    dict_pairs(Objects, _, Foods), % Extracting the Foods from the Objects
-    values_sum(Animals, AnimalValue), % Calculating the total value of the Animals
-    values_sum(Foods, FoodValue), % Calculating the total value of the Foods
-    Value is AnimalValue + FoodValue. % Summing the total value of Animals and Foods
+    dict_pairs(Agents, _, AgentPairs), % Extracting the Agents as pairs
+    dict_pairs(Objects, _, FoodPairs), % Extracting the Foods as pairs
+    values_sum(AgentPairs, AgentValue), % Calculating the total value of the Agents
+    values_sum(FoodPairs, FoodValue), % Calculating the total value of the Foods
+    Value is AgentValue + FoodValue. % Summing the total value of Agents and Foods
 
 
 % Helper function to calculate the total value of a list of objects
 values_sum([], 0). % Base case: empty list
-values_sum([_Type-Value|T], Total) :-
-    values_sum(T, Rest),
+values_sum([_-Agent|T], Total) :-
+    get_dict(subtype, Agent, Subtype), % Extract the subtype of the agent
+    value(Subtype, Value), % Get the value of the subtype
+    values_sum(T, Rest), % Recursively call the helper function with the remaining objects
     Total is Value + Rest.
 
 
@@ -161,6 +173,9 @@ find_nearest_food_helper([[X,Y]|T], XAgent, YAgent, MinDistance, NearestFood) :-
 
 
 % 7- move_to_coordinate(+State, +AgentId, +X, +Y, -ActionList, +DepthLimit)
+
+
+
 
 % 8- move_to_nearest_food(+State, +AgentId, -ActionList, +DepthLimit)
 
