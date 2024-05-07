@@ -1,8 +1,3 @@
-% Huriye Ceylin Gebeş
-% 2021400306
-% compiling: yes
-% complete: yes
-
 
 :- ['cmpefarm.pro'].
 :- init_from_map.
@@ -177,13 +172,48 @@ get_food_type([X, Y], FoodType) :-
     get_dict(subtype, Object, FoodType).
 
 
+
+% agent_position/3 predicate to get the position of an agent
+agent_position(State, AgentId, [X, Y]) :-
+    State = [Agents, _, _, _],
+    get_dict(AgentId, Agents, Agent),
+    get_dict(x, Agent, X),
+    get_dict(y, Agent, Y).
+
+% agent_position/4 predicate to get the position of an agent
+agent_position(State, AgentId, X, Y) :-
+    State = [Agents, _, _, _],
+    get_dict(AgentId, Agents, Agent),
+    get_dict(x, Agent, X),
+    get_dict(y, Agent, Y).
+
 % 7- move_to_coordinate(+State, +AgentId, +X, +Y, -ActionList, +DepthLimit)
+% query: state(Agents, Objects, Time, TurnOrder), State=[Agents, Objects, Time, TurnOrder], move_to_coordinate(State, 0, 1, 5, ActionList, 10).
+% move_to_coordinate/6 predicate
+move_to_coordinate(State, AgentId, X, Y, ActionList, DepthLimit) :-
+    move_to_coordinate(State, AgentId, X, Y, [], ActionList, DepthLimit).
 
 
+% Base case: Agent is already at the target coordinates or depth limit is reached
+move_to_coordinate(_, _, X, Y, ActionList, ActionList, _) :-
+    agent_position(_, _, [X, Y]).
+
+move_to_coordinate(_, _, _, _, ActionList, ActionList, 0).
 
 
-% 8- move_to_nearest_food(+State, +AgentId, -ActionList, +DepthLimit)
-
-% 9- consume_all(+State, +AgentId, -NumberOfMoves, -Value, NumberOfChildren +DepthLimit)
-
-
+% Recursive case: Explore possible actions to move closer to the target coordinates
+move_to_coordinate(State, AgentId, X, Y, AccActions, ActionList, DepthLimit) :-
+    DepthLimit > 0,
+    DepthLimitMinusOne is DepthLimit - 1,
+    random_move_list_updated(State, 1, AgentId, PossibleActions),
+    make_series_of_actions(PossibleActions, State, AgentId, NewState),
+    agent_position(NewState, AgentId, NewX, NewY),
+    (NewX =:= X, NewY =:= Y ->
+        reverse(AccActions, ActionList);
+        move_to_coordinate(NewState, AgentId, X, Y, [PossibleActions|AccActions], ActionList, DepthLimitMinusOne)).
+    
+% Helper predicate to get the position of an agent
+agent_position(State, AgentId, X, Y) :-
+    state(Agents, _, _, _),
+    get_agent_from_position(X, Y, Agents, Agent),
+    AgentId = Agent.id.
